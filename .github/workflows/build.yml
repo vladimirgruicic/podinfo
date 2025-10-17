@@ -1,0 +1,76 @@
+name: Build, Sign & SBOM (Mock ECR) - Incremental Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write  # For cosign OIDC
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Verify App
+        run: go run main.go & sleep 5 && curl -f http://localhost:9898/healthz && pkill podinfo
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # - name: Install Cosign & Syft
+      #   run: |
+      #     curl -sSfL https://github.com/sigstore/cosign/releases/download/v2.2.4/cosign-linux-amd64 -o /usr/local/bin/cosign
+      #     chmod +x /usr/local/bin/cosign
+      #     curl -sSfL https://github.com/anchore/syft/releases/download/v1.12.5/syft_1.12.5_linux_amd64.tar.gz | tar xzf - syft_1.12.5_linux_amd64/syft
+      #     chmod +x /usr/local/bin/syft
+      #     rm -rf syft_1.12.5_linux_amd64
+
+      # - name: Build Image & Get Digest
+      #   id: meta
+      #   run: |
+      #     docker buildx build --load -t podinfo-app:local -f Dockerfile --output type=image,name=podinfo-app:local,push=false .
+      #     DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' podinfo-app:local | cut -d'@' -f2)
+      #     echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+      #     echo "full_image=localhost:5000/podinfo-app@${DIGEST}" >> $GITHUB_OUTPUT
+
+      # - name: Start Mock ECR (Local Test)
+      #   run: |
+      #     docker run -d -p 5000:5000 --name mock-ecr registry:2 || true
+
+      # - name: Tag & Push to Mock ECR
+      #   run: |
+      #     docker tag podinfo-app:local localhost:5000/podinfo-app:${{ steps.meta.outputs.digest }}
+      #     docker push localhost:5000/podinfo-app:${{ steps.meta.outputs.digest }}
+
+      # - name: Sign Image with Cosign
+      #   run: |
+      #     cosign sign --yes \
+      #       -a build.timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+      #       -a git.commit=${{ github.sha }} \
+      #       ${{ steps.meta.outputs.full_image }}
+
+      # - name: Generate SBOM
+      #   run: |
+      #     syft localhost:5000/podinfo-app@${{ steps.meta.outputs.digest }} -o json > sbom.json
+
+      # - name: Upload SBOM Artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: sbom-${{ github.sha }}
+      #     path: sbom.json
+
+      # - name: Verify Push & Sign
+      #   run: |
+      #     curl http://localhost:5000/v2/podinfo-app/manifests/${{ steps.meta.outputs.digest }}
+      #     cosign verify ${{ steps.meta.outputs.full_image }}
