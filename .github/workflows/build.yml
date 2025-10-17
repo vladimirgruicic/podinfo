@@ -97,6 +97,7 @@ jobs:
 
       - name: Verify Push & Sign
         run: |
+          PUSHER_TAG="localhost:5000/podinfo-app:latest"
           curl http://localhost:5000/v2/podinfo-app/manifests/latest
           cosign verify $PUSHER_TAG
           echo "Verification complete"
