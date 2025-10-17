@@ -76,16 +76,16 @@ jobs:
 
       - name: Sign Image with Cosign
         run: |
-          PUSHER_IMAGE="localhost:5000/podinfo-app@${{ steps.meta.outputs.digest }}"
+          PUSHER_TAG="localhost:5000/podinfo-app:latest"
           cosign sign --yes \
             -a build.timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
             -a git.commit=${{ github.sha }} \
-            $PUSHER_IMAGE
-          echo "Signed pushed image: $PUSHER_IMAGE"
+            $PUSHER_TAG
+          echo "Signed pushed tag: $PUSHER_TAG"
 
       - name: Generate SBOM
         run: |
-          syft ${{ steps.meta.outputs.full_image }} -o json > sbom.json
+          syft $PUSHER_TAG -o json > sbom.json
           echo "SBOM generated: $(wc -l < sbom.json) lines"
 
       - name: Upload SBOM Artifact
@@ -97,5 +97,5 @@ jobs:
       - name: Verify Push & Sign
         run: |
           curl http://localhost:5000/v2/podinfo-app/manifests/latest
-          cosign verify ${{ steps.meta.outputs.full_image }}
+          cosign verify $PUSHER_TAG
           echo "Verification complete"
