@@ -50,10 +50,9 @@ jobs:
           curl -sSfL https://github.com/sigstore/cosign/releases/download/v2.2.4/cosign-linux-amd64 -o /usr/local/bin/cosign
           chmod +x /usr/local/bin/cosign
           cosign version  # Verify install
-          curl -sSfL https://github.com/anchore/syft/releases/download/v1.10.0/syft_1.10.0_linux_amd64.tar.gz | tar xzf - syft_1.10.0_linux_amd64/syft
+          curl -sSfL https://github.com/anchore/syft/releases/download/v1.10.0/syft_1.10.0_linux_amd64.tar.gz | tar xzf - syft_1.10.0_linux_amd64/syft --strip-components=1 -C /usr/local/bin
           chmod +x /usr/local/bin/syft
           syft version  # Verify install
-          rm -rf syft_1.10.0_linux_amd64
 
       # - name: Build Image & Get Digest
       #   id: meta
