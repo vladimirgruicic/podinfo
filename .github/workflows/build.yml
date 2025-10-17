@@ -74,24 +74,27 @@ jobs:
           echo "Pushed latest to mock ECR"
           echo "Digest for sign/SBOM: ${{ steps.meta.outputs.full_image }}"
 
-      # - name: Sign Image with Cosign
-      #   run: |
-      #     cosign sign --yes \
-      #       -a build.timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
-      #       -a git.commit=${{ github.sha }} \
-      #       ${{ steps.meta.outputs.full_image }}
+      - name: Sign Image with Cosign
+        run: |
+          cosign sign --yes \
+            -a build.timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+            -a git.commit=${{ github.sha }} \
+            ${{ steps.meta.outputs.full_image }}
+          echo "Signed image: ${{ steps.meta.outputs.full_image }}"
 
-      # - name: Generate SBOM
-      #   run: |
-      #     syft localhost:5000/podinfo-app@${{ steps.meta.outputs.digest }} -o json > sbom.json
+      - name: Generate SBOM
+        run: |
+          syft ${{ steps.meta.outputs.full_image }} -o json > sbom.json
+          echo "SBOM generated: $(wc -l < sbom.json) lines"
 
-      # - name: Upload SBOM Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: sbom-${{ github.sha }}
-      #     path: sbom.json
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.json
 
-      # - name: Verify Push & Sign
-      #   run: |
-      #     curl http://localhost:5000/v2/podinfo-app/manifests/${{ steps.meta.outputs.digest }}
-      #     cosign verify ${{ steps.meta.outputs.full_image }}
+      - name: Verify Push & Sign
+        run: |
+          curl http://localhost:5000/v2/podinfo-app/manifests/latest
+          cosign verify ${{ steps.meta.outputs.full_image }}
+          echo "Verification complete"
