@@ -56,8 +56,13 @@ jobs:
       - name: Build Image & Get Digest
         id: meta
         run: |
+          echo "Step 1: Starting docker buildx build"
           docker buildx build --load -t podinfo-app:local -f Dockerfile .
-          DIGEST=$(docker buildx imagetools inspect podinfo-app:local | jq -r '.config.digest')
+          echo "Step 2: Build complete, inspecting image"
+          INSPECT_OUTPUT=$(docker buildx imagetools inspect podinfo-app:local)
+          echo "Step 3: Raw inspect output: $INSPECT_OUTPUT"
+          DIGEST=$(echo "$INSPECT_OUTPUT" | jq -r '.config.digest')
+          echo "Step 4: Extracted digest: $DIGEST"
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
           echo "full_image=localhost:5000/podinfo-app@${DIGEST}" >> $GITHUB_OUTPUT
           echo "Built digest: $DIGEST"  # Log for debug
