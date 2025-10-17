@@ -85,6 +85,7 @@ jobs:
 
       - name: Generate SBOM
         run: |
+          PUSHER_TAG="localhost:5000/podinfo-app:latest"
           syft $PUSHER_TAG -o json > sbom.json
           echo "SBOM generated: $(wc -l < sbom.json) lines"
 
