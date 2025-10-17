@@ -76,11 +76,12 @@ jobs:
 
       - name: Sign Image with Cosign
         run: |
+          LOCAL_IMAGE="podinfo-app:local@${{ steps.meta.outputs.digest }}"
           cosign sign --yes \
             -a build.timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
             -a git.commit=${{ github.sha }} \
-            ${{ steps.meta.outputs.full_image }}
-          echo "Signed image: ${{ steps.meta.outputs.full_image }}"
+            $LOCAL_IMAGE
+          echo "Signed local image: $LOCAL_IMAGE"
 
       - name: Generate SBOM
         run: |
