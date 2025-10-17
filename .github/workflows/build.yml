@@ -25,13 +25,20 @@ jobs:
       - name: Verify App
         run: |
           go run main.go & SERVER_PID=$!
-          sleep 10  # Longer wait for runner startup
-          # Check server running and port listening
-          ps -p $SERVER_PID || (echo "Server failed to start" && exit 1)
-          netstat -tlnp | grep :9898 || (echo "Port 9898 not listening" && exit 1)
-          curl -f http://localhost:9898/healthz
-          kill $SERVER_PID  # Clean kill by PID
-
+          # Wait for server to start (deps + bind)
+          for i in {1..20}; do
+            if curl -f -s http://localhost:9898/healthz > /dev/null; then
+              echo "Server ready after $i seconds"
+              break
+            fi
+            sleep 1
+          else
+            echo "Server failed to start after 20s"
+            ps -p $SERVER_PID
+            exit 1
+          fi
+          kill $SERVER_PID
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
