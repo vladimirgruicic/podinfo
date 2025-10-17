@@ -57,7 +57,7 @@ jobs:
         id: meta
         run: |
           docker buildx build --load -t podinfo-app:local -f Dockerfile .
-          DIGEST=$(docker buildx imagetools inspect podinfo-app:local | head -1 | cut -d' ' -f3)
+          DIGEST=$(docker buildx imagetools inspect podinfo-app:local | jq -r '.config.digest')
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
           echo "full_image=localhost:5000/podinfo-app@${DIGEST}" >> $GITHUB_OUTPUT
           echo "Built digest: $DIGEST"  # Log for debug
