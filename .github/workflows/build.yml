@@ -62,14 +62,16 @@ jobs:
           echo "full_image=localhost:5000/podinfo-app@${DIGEST}" >> $GITHUB_OUTPUT
           echo "Built digest: $DIGEST"  # Log for debug
 
-      # - name: Start Mock ECR (Local Test)
-      #   run: |
-      #     docker run -d -p 5000:5000 --name mock-ecr registry:2 || true
+      - name: Start Mock ECR (Local Test)
+        run: |
+          # Ignore if already running; for Actions, assume external registry
+          docker run -d -p 5000:5000 --name mock-ecr registry:2 || true
 
-      # - name: Tag & Push to Mock ECR
-      #   run: |
-      #     docker tag podinfo-app:local localhost:5000/podinfo-app:${{ steps.meta.outputs.digest }}
-      #     docker push localhost:5000/podinfo-app:${{ steps.meta.outputs.digest }}
+      - name: Tag & Push to Mock ECR
+        run: |
+          docker tag podinfo-app:local localhost:5000/podinfo-app:${{ steps.meta.outputs.digest }}
+          docker push localhost:5000/podinfo-app:${{ steps.meta.outputs.digest }}
+          echo "Pushed to mock ECR: ${{ steps.meta.outputs.full_image }}"
 
       # - name: Sign Image with Cosign
       #   run: |
